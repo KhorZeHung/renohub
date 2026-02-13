@@ -30,8 +30,50 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# ===========================================
+# Environment files
+# ===========================================
+# Local environment (development)
+.env.local
+.env.development.local
+.env.test.local
+
+# Production environment
+.env.production
+.env.production.local
+
+# Keep .env.example as template (committed to git)
+!.env.example
+
+# ===========================================
+# Uploads (keep directory structure, ignore content)
+# ===========================================
+/public/uploads/logos/*
+!/public/uploads/logos/.gitkeep
+/public/uploads/items/*
+!/public/uploads/items/.gitkeep
+/public/uploads/temp/*
+!/public/uploads/temp/.gitkeep
+
+# ===========================================
+# IDE and Editor
+# ===========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===========================================
+# OS generated files
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # vercel
 .vercel
@@ -39,3 +81,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ===========================================
+# Logs
+# ===========================================
+logs/
+*.log
+
+# ===========================================
+# PM2
+# ===========================================
+ecosystem.config.js
+.pm2/
