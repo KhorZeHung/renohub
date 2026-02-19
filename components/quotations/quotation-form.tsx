@@ -279,6 +279,67 @@ export function QuotationForm({
       .catch(() => {});
   }, [isLeadEdit]);
 
+  // Hydrate availableImages from item library when editing a saved quotation
+  useEffect(() => {
+    if (!isLeadEdit || !initialData) return;
+
+    const itemIds = new Set<string>();
+    initialData.groups.forEach((g) =>
+      g.lineItems.forEach((li) => {
+        if (li.itemId) itemIds.add(li.itemId);
+      })
+    );
+
+    if (itemIds.size === 0) return;
+
+    const fetchItemImages = async () => {
+      const imageMap = new Map<string, ItemImage[]>();
+
+      await Promise.all(
+        Array.from(itemIds).map(async (itemId) => {
+          try {
+            const res = await fetch(`/api/items/${itemId}`);
+            if (res.ok) {
+              const item = await res.json();
+              if (item.images?.length > 0) {
+                imageMap.set(itemId, item.images);
+              }
+            }
+          } catch {
+            // Item may have been deleted — fallback handled below
+          }
+        })
+      );
+
+      setGroups((prev) =>
+        prev.map((group) => ({
+          ...group,
+          lineItems: group.lineItems.map((li) => {
+            if (!li.itemId) return li;
+            const fetched = imageMap.get(li.itemId);
+            if (fetched) {
+              return { ...li, availableImages: fetched };
+            }
+            // Fallback: reconstruct from selectedImages so user can still see them
+            if (li.selectedImages.length > 0) {
+              return {
+                ...li,
+                availableImages: li.selectedImages.map((img, i) => ({
+                  url: img.url,
+                  filename: img.filename,
+                  order: i,
+                })),
+              };
+            }
+            return li;
+          }),
+        }))
+      );
+    };
+
+    fetchItemImages();
+  }, [isLeadEdit, initialData]);
+
   // Notes
   const [notes, setNotes] = useState(() => {
     if (isLeadEdit && initialData) return initialData.notes || "";
