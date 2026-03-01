@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
-import { Lead } from "@/lib/models";
+import { Lead, Quotation } from "@/lib/models";
 import {
   getAuthenticatedSessionWithCompany,
   validateOwnership,
@@ -91,8 +91,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Get quotation count for this lead
-    // TODO: When Quotation model exists, count quotations here
-    const quotationsCount = 0;
+    const quotationsCount = await Quotation.countDocuments({
+      leadId: lead._id,
+      isDeleted: false,
+    });
 
     // Transform and return
     const leadResponse = transformLeadDetail(lead, quotationsCount);
@@ -187,8 +189,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     // Get quotation count
-    // TODO: When Quotation model exists, count quotations here
-    const quotationsCount = 0;
+    const quotationsCount = await Quotation.countDocuments({
+      leadId: updatedLead._id,
+      isDeleted: false,
+    });
 
     // Transform and return
     const leadResponse = transformLeadDetail(updatedLead, quotationsCount);

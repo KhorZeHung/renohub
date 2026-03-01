@@ -11,32 +11,32 @@ interface NumericInputProps
     "type" | "inputMode" | "onChange"
   > {
   mode?: NumericInputMode;
+  maxDecimalPlaces?: number;
   onValueChange?: (value: number) => void;
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
-  ({ mode = "decimal", onValueChange, onChange, ...props }, ref) => {
+  ({ mode = "decimal", maxDecimalPlaces, onValueChange, onChange, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
 
-      const pattern =
-        mode === "decimal" ? /^\d*\.?\d*$/ : /^\d*$/;
-
-      if (val !== "" && !pattern.test(val)) {
-        return;
+      let pattern: RegExp;
+      if (mode === "decimal") {
+        pattern = maxDecimalPlaces !== undefined
+          ? new RegExp(`^\\d*\\.?\\d{0,${maxDecimalPlaces}}$`)
+          : /^\d*\.?\d*$/;
+      } else {
+        pattern = /^\d*$/;
       }
 
-      if (onChange) {
-        onChange(e);
-      }
+      if (val !== "" && !pattern.test(val)) return;
+
+      if (onChange) onChange(e);
 
       if (onValueChange) {
-        if (val === "" || val === ".") {
-          onValueChange(0);
-        } else {
-          onValueChange(Number(val));
-        }
+        if (val === "" || val.endsWith(".")) return;
+        onValueChange(Number(val));
       }
     };
 

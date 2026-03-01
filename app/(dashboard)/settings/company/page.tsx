@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useCompany } from "@/hooks/use-company";
 import {
   Building2,
   Mail,
@@ -32,34 +33,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface CompanyLogo {
-  url: string;
-  filename: string;
-  width?: number;
-  height?: number;
-}
-
-interface CompanyProfile {
-  id: string;
-  name: string;
-  email: string;
-  contactNumber: string | null;
-  address: string | null;
-  website: string | null;
-  taxRegistrationNumber: string | null;
-  logo: CompanyLogo | null;
-  defaultTerms: string | null;
-  defaultValidityDays: number;
-  defaultTaxRate: number;
-}
 
 export default function CompanyProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const { company, isLoading, error: companyError } = useCompany();
+
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [defaultTerms, setDefaultTerms] = useState<string[]>([]);
@@ -75,63 +58,41 @@ export default function CompanyProfilePage() {
     defaultTaxRate: 0,
   });
 
-  // Fetch company profile on mount
+  // Hydrate form once company data loads
   useEffect(() => {
-    const fetchCompany = async () => {
-      try {
-        const response = await fetch("/api/company");
-
-        if (response.status === 404) {
-          // Company not set up yet
-          setIsLoading(false);
-          return;
-        }
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push("/login");
-            return;
-          }
-          throw new Error("Failed to fetch company profile");
-        }
-
-        const data: CompanyProfile = await response.json();
-        setCompanyData({
-          name: data.name,
-          email: data.email,
-          phone: data.contactNumber || "",
-          address: data.address || "",
-          website: data.website || "",
-          taxNumber: data.taxRegistrationNumber || "",
-          defaultValidityDays: data.defaultValidityDays,
-          defaultTaxRate: data.defaultTaxRate,
-        });
-
-        if (data.logo?.url) {
-          setLogoUrl(data.logo.url);
-        }
-
-        if (data.defaultTerms) {
-          // Parse terms from string (stored as newline-separated)
-          const terms = data.defaultTerms.split("\n").filter((t) => t.trim());
-          if (terms.length > 0) {
-            setDefaultTerms(terms);
-          }
-        }
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: "Failed to load company profile. Please try again.",
-          variant: "destructive",
-        });
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+    if (isLoading || hydrated) return;
+    if (companyError) {
+      toast({
+        title: "Error",
+        description: "Failed to load company profile. Please try again.",
+        variant: "destructive",
+      });
+      setHydrated(true);
+      return;
+    }
+    if (company) {
+      setCompanyData({
+        name: company.name,
+        email: company.email,
+        phone: company.contactNumber || "",
+        address: company.address || "",
+        website: company.website || "",
+        taxNumber: company.taxRegistrationNumber || "",
+        defaultValidityDays: company.defaultValidityDays,
+        defaultTaxRate: company.defaultTaxRate,
+      });
+      if (company.logo?.url) {
+        setLogoUrl(company.logo.url);
       }
-    };
-
-    fetchCompany();
-  }, [router]);
+      if (company.defaultTerms) {
+        const terms = company.defaultTerms.split("\n").filter((t) => t.trim());
+        if (terms.length > 0) {
+          setDefaultTerms(terms);
+        }
+      }
+    }
+    setHydrated(true);
+  }, [isLoading, company, companyError, hydrated]);
 
   // Terms drag and drop handlers
   const handleDragStart = (index: number) => {

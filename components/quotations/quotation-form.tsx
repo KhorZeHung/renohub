@@ -54,6 +54,7 @@ import { ItemReviewDialog } from "@/components/quotations/item-review-dialog";
 import { AttachmentSection, type AttachmentLineItemImage } from "@/components/quotations/attachment-section";
 import { PDFPreviewDialog } from "@/components/quotations/pdf-preview-dialog";
 import { useItems } from "@/hooks/use-items";
+import { useCompany } from "@/hooks/use-company";
 import {
   generateStandalonePDF,
   generatePDF,
@@ -164,6 +165,9 @@ export function QuotationForm({
     active: true,
   });
 
+  // Fetch company defaults (cached via SWR)
+  const { company } = useCompany();
+
   // Status (only for lead modes)
   const [status, setStatus] = useState<QuotationStatus>(
     initialData?.status ?? "draft"
@@ -266,18 +270,13 @@ export function QuotationForm({
     return 0;
   });
 
-  // Fetch company default tax rate for new quotations
+  // Apply company default tax rate for new quotations
   useEffect(() => {
     if (isLeadEdit) return;
-    fetch("/api/company")
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (data?.defaultTaxRate != null) {
-          setTaxRate(data.defaultTaxRate);
-        }
-      })
-      .catch(() => {});
-  }, [isLeadEdit]);
+    if (company?.defaultTaxRate != null) {
+      setTaxRate(company.defaultTaxRate);
+    }
+  }, [isLeadEdit, company]);
 
   // Hydrate availableImages from item library when editing a saved quotation
   useEffect(() => {
@@ -295,21 +294,20 @@ export function QuotationForm({
     const fetchItemImages = async () => {
       const imageMap = new Map<string, ItemImage[]>();
 
-      await Promise.all(
-        Array.from(itemIds).map(async (itemId) => {
-          try {
-            const res = await fetch(`/api/items/${itemId}`);
-            if (res.ok) {
-              const item = await res.json();
-              if (item.images?.length > 0) {
-                imageMap.set(itemId, item.images);
-              }
+      try {
+        const ids = Array.from(itemIds).join(",");
+        const res = await fetch(`/api/items?ids=${encodeURIComponent(ids)}`);
+        if (res.ok) {
+          const data = await res.json();
+          for (const item of data.items ?? []) {
+            if (item.images?.length > 0) {
+              imageMap.set(item.id, item.images);
             }
-          } catch {
-            // Item may have been deleted — fallback handled below
           }
-        })
-      );
+        }
+      } catch {
+        // Items may have been deleted — fallback handled below
+      }
 
       setGroups((prev) =>
         prev.map((group) => ({

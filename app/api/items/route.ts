@@ -48,6 +48,31 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
+
+    // Bulk fetch by IDs (used when editing a quotation with multiple library items)
+    const idsParam = searchParams.get("ids");
+    if (idsParam) {
+      const ids = idsParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (ids.length === 0) {
+        return NextResponse.json({ items: [] });
+      }
+
+      await connectToDatabase();
+
+      const items = await Item.find({
+        _id: { $in: ids },
+        companyId: company._id,
+        isDeleted: false,
+      }).lean();
+
+      return NextResponse.json({ items: items.map(transformItem) });
+    }
+
     const queryResult = itemQuerySchema.safeParse({
       search: searchParams.get("search") || undefined,
       category: searchParams.get("category") || undefined,
@@ -81,12 +106,9 @@ export async function GET(request: NextRequest) {
       query.category = category;
     }
 
-    // Add text search
+    // Add text search (uses the text index on name + description)
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
     // Count total documents

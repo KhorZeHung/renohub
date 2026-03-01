@@ -7,7 +7,9 @@ import {
   Smartphone,
   CheckCircle2,
   ArrowRight,
+  Zap,
 } from "lucide-react";
+import { MarketingHeader } from "@/components/marketing/marketing-header";
 
 const features = [
   {
@@ -46,25 +48,7 @@ const benefits = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <FileText className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-primary">RenoHub</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Get Started</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-24">
@@ -200,6 +184,59 @@ export default function Home() {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Free Tier Section */}
+      <section className="bg-white py-16 md:py-24 border-t">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-blue-50 border border-primary/10 p-8 md:p-12">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <Zap className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+                Try It Right Now — No Sign-Up Needed
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Generate a professional PDF quotation instantly. Enter your
+                company details, add line items, and download — completely free.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-4 justify-center text-sm text-muted-foreground">
+                {[
+                  "No account required",
+                  "Company & client details",
+                  "Line items with totals",
+                  "Professional PDF output",
+                ].map((item) => (
+                  <span key={item} className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" asChild>
+                  <Link href="/quotation/free-tier">
+                    <Zap className="mr-2 h-5 w-5" />
+                    Try Free Quotation Generator
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/register">
+                    Create Full Account
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Want to save quotations, manage leads, and unlock all features?{" "}
+                <Link href="/register" className="text-primary hover:underline font-medium">
+                  Sign up free →
+                </Link>
+              </p>
             </div>
           </div>
         </div>

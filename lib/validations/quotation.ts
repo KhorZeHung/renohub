@@ -399,3 +399,26 @@ export const standaloneSaveSchema = z.object({
 );
 
 export type StandaloneSaveInput = z.infer<typeof standaloneSaveSchema>;
+
+// Public company schema (user-entered, no DB lookup)
+export const publicCompanySchema = z.object({
+  name: z.string().min(1, "Company name is required").max(200).trim(),
+  email: z
+    .string()
+    .email("Invalid email")
+    .toLowerCase()
+    .trim()
+    .optional()
+    .or(z.literal("")),
+  contactNumber: z.string().max(20).trim().optional(),
+  address: z.string().max(500).trim().optional(),
+});
+
+export type PublicCompanyInput = z.infer<typeof publicCompanySchema>;
+
+// Public quotation schema (extends standalone with company section)
+export const publicQuotationSchema = standaloneQuotationSchema.extend({
+  company: publicCompanySchema,
+});
+
+export type PublicQuotationInput = z.infer<typeof publicQuotationSchema>;

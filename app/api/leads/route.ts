@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
-import { Lead } from "@/lib/models";
+import { Lead, Quotation } from "@/lib/models";
 import { getAuthenticatedSessionWithCompany } from "@/lib/auth-utils";
 import { leadCreateSchema, leadQuerySchema } from "@/lib/validations/lead";
 
@@ -86,13 +86,9 @@ export async function GET(request: NextRequest) {
       query.status = status.length === 1 ? status[0] : { $in: status };
     }
 
-    // Add text search
+    // Add text search (uses the text index on clientName + email + siteAddress)
     if (search) {
-      query.$or = [
-        { clientName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { siteAddress: { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
     // Count total documents
@@ -114,9 +110,15 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Get quotation counts for all leads
-    // TODO: When Quotation model exists, aggregate counts here
-    // For now, return 0 for all leads
+    const leadIds = leads.map((l) => l._id);
+    const countAgg = await Quotation.aggregate([
+      { $match: { leadId: { $in: leadIds }, isDeleted: false } },
+      { $group: { _id: "$leadId", count: { $sum: 1 } } },
+    ]);
     const quotationCounts: Record<string, number> = {};
+    for (const entry of countAgg) {
+      quotationCounts[entry._id.toString()] = entry.count;
+    }
 
     // Transform leads
     const transformedLeads = leads.map((lead) =>

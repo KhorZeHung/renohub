@@ -133,12 +133,9 @@ export async function GET(request: NextRequest) {
       query.leadId = new mongoose.Types.ObjectId(leadId);
     }
 
-    // Add text search
+    // Add text search (uses the text index on quotationNumber + client.name)
     if (search) {
-      query.$or = [
-        { quotationNumber: { $regex: search, $options: "i" } },
-        { "client.name": { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
 
     // Count total documents
